@@ -1,0 +1,19 @@
+{
+  "name": "PoseidonT3",
+  "width": 3,
+  "signatures": [
+    "hash(uint256[2])"
+  ],
+  "selectors": [
+    "0x561558fe"
+  ],
+  "runtime_bytes": 13731,
+  "creation_bytes": 13743,
+  "callee_gas": 10149,
+  "body_gas": 10092,
+  "sample_input": [
+    1,
+    2
+  ],
+  "sample_output": "0x115cc0f5e7d690413df64c6b9662e9cf2a3617f2743245519e19607a4417189a"
+}

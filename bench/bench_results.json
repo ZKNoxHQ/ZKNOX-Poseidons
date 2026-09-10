@@ -1,0 +1,160 @@
+{
+  "libs": {
+    "iden3_T3": {
+      "addr": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+      "deploy_gas": 2157126,
+      "size": 9743
+    },
+    "fork_T3": {
+      "addr": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+      "deploy_gas": 3223329,
+      "size": 14660
+    },
+    "new_T3": {
+      "addr": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+      "deploy_gas": 3022307,
+      "size": 13731
+    },
+    "iden3_T4": {
+      "addr": "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9",
+      "deploy_gas": 2745274,
+      "size": 12463
+    },
+    "fork_T4": {
+      "addr": "0xdc64a140aa3e981100a9beca4e685f962f0cf6c9",
+      "deploy_gas": 4540052,
+      "size": 20748
+    },
+    "new_T4": {
+      "addr": "0x5fc8d32690cc91d4c39d9d3abcbd16989f875707",
+      "deploy_gas": 4324035,
+      "size": 19750
+    },
+    "yul_T3_bls": {
+      "addr": "0x0165878a594ca255338adfa4d48449f69242eb8f",
+      "deploy_gas": 3250368,
+      "size": 14785
+    },
+    "new_T3_bls": {
+      "addr": "0xa513e6e4b8f2a923d98304ec87f64353c4d5c853",
+      "deploy_gas": 3070091,
+      "size": 13952
+    },
+    "yul_T4_bls": {
+      "addr": "0x2279b7a0a67db372996a5fab50d91eaa73d2ebe6",
+      "deploy_gas": 4588210,
+      "size": 20971
+    },
+    "new_T4_bls": {
+      "addr": "0x8a791620dd6260079bf849dc5567adc3f2fdc318",
+      "deploy_gas": 4387801,
+      "size": 20045
+    },
+    "platus_p2": {
+      "addr": "0x610178da211fef7d417bc0e6fed39f05609ad788",
+      "deploy_gas": 3315998,
+      "size": 15095
+    }
+  },
+  "single": {
+    "iden3_T3": {
+      "cold": 31883,
+      "warm": 29374
+    },
+    "fork_T3": {
+      "cold": 15285,
+      "warm": 12776
+    },
+    "new_T3": {
+      "cold": 13030,
+      "warm": 10521
+    },
+    "yul_T3_bls": {
+      "cold": 16146,
+      "warm": 13637
+    },
+    "new_T3_bls": {
+      "cold": 14249,
+      "warm": 11740
+    },
+    "platus_p2_2w": {
+      "cold": 19649,
+      "warm": 17143
+    },
+    "iden3_T4": {
+      "cold": 48012,
+      "warm": 45500
+    },
+    "fork_T4": {
+      "cold": 19324,
+      "warm": 16812
+    },
+    "new_T4": {
+      "cold": 16938,
+      "warm": 14426
+    },
+    "yul_T4_bls": {
+      "cold": 20997,
+      "warm": 18485
+    },
+    "new_T4_bls": {
+      "cold": 18895,
+      "warm": 16383
+    },
+    "platus_p2_3w": {
+      "cold": 19655,
+      "warm": 17146
+    }
+  },
+  "insertLeaves": {
+    "iden3_T3": {
+      "1": 651191,
+      "2": 649276,
+      "4": 677458,
+      "8": 765834
+    },
+    "fork_T3": {
+      "1": 385623,
+      "2": 383708,
+      "4": 395292,
+      "8": 433874
+    },
+    "new_T3": {
+      "1": 349543,
+      "2": 347628,
+      "4": 356957,
+      "8": 388774
+    },
+    "yul_T3_bls": {
+      "1": 399399,
+      "2": 397484,
+      "4": 409929,
+      "8": 451094
+    },
+    "new_T3_bls": {
+      "1": 369047,
+      "2": 367132,
+      "4": 377680,
+      "8": 413154
+    },
+    "platus_p2": {
+      "1": 455111,
+      "2": 453196,
+      "4": 469123,
+      "8": 520734
+    }
+  },
+  "runtime_bytes": {
+    "iden3_T3": 9743,
+    "fork_T3": 14660,
+    "new_T3": 13731,
+    "iden3_T4": 12463,
+    "fork_T4": 20748,
+    "new_T4": 19750,
+    "yul_T3_bls": 14785,
+    "new_T3_bls": 13952,
+    "yul_T4_bls": 20971,
+    "new_T4_bls": 20045,
+    "platus_p2": 15095
+  }
+}

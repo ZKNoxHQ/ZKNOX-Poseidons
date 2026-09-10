@@ -1,0 +1,19 @@
+{
+  "name": "PoseidonT3BLS12381",
+  "width": 3,
+  "signatures": [
+    "poseidon(bytes32[2])"
+  ],
+  "selectors": [
+    "0x299e5660"
+  ],
+  "runtime_bytes": 13952,
+  "creation_bytes": 13964,
+  "callee_gas": 11368,
+  "body_gas": 11311,
+  "sample_input": [
+    1,
+    2
+  ],
+  "sample_output": "0x28ce19420fc246a05553ad1e8c98f5c9d67166be2c18e9e4cb4b4e317dd2a78a"
+}

@@ -1,0 +1,15 @@
+[profile.default]
+src = "src"
+test = "test"
+out = "out"
+cache_path = "cache"
+solc_version = "0.7.6"
+auto_detect_solc = false
+optimizer = true
+optimizer_runs = 4167
+optimizer_details = { yul = false }
+bytecode_hash = "none"
+evm_version = "istanbul"
+fuzz.runs = 10000
+# Test contracts embed the reference libraries' creation bytecode.
+code_size_limit = 100000

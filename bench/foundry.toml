@@ -1,0 +1,10 @@
+[profile.default]
+src = "src"
+out = "out"
+solc_version = "0.8.30"
+auto_detect_solc = false
+optimizer = true
+optimizer_runs = 1600
+bytecode_hash = "none"
+evm_version = "istanbul"
+code_size_limit = 100000

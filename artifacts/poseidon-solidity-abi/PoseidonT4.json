@@ -1,0 +1,20 @@
+{
+  "name": "PoseidonT4",
+  "width": 4,
+  "signatures": [
+    "hash(uint256[3])"
+  ],
+  "selectors": [
+    "0x20cf0a37"
+  ],
+  "runtime_bytes": 19750,
+  "creation_bytes": 19762,
+  "callee_gas": 14051,
+  "body_gas": 13994,
+  "sample_input": [
+    1,
+    2,
+    3
+  ],
+  "sample_output": "0x0e7732d89e6939c0ff03d5e58dab6302f3230e269dc5b968f725df34ab36d732"
+}

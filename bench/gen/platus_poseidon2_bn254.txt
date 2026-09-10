@@ -1,0 +1,4 @@
+platus-xyz/poseidon2-solidity, commit 90482d7, src/Poseidon2.sol (selector-less rate-3 Poseidon2
+sponge over BN254, t=4, 8+56 rounds, domain tag inputs.length << 64), compiled with
+solc 0.8.27 --optimize --optimize-runs 20000 --evm-version cancun --metadata-hash none.
+Call with packed 32-byte words (no selector); creation bytecode in platus_poseidon2_bn254.hex.

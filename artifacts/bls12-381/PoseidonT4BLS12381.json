@@ -1,0 +1,20 @@
+{
+  "name": "PoseidonT4BLS12381",
+  "width": 4,
+  "signatures": [
+    "poseidon(bytes32[3])"
+  ],
+  "selectors": [
+    "0x5a53025d"
+  ],
+  "runtime_bytes": 20045,
+  "creation_bytes": 20057,
+  "callee_gas": 16008,
+  "body_gas": 15951,
+  "sample_input": [
+    1,
+    2,
+    3
+  ],
+  "sample_output": "0x5ad8bcfa9754b5bc043cc74dea65ae15e3fdb0c2295970aaacfc116c802d9895"
+}

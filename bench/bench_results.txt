@@ -1,0 +1,109 @@
+== deploying ==
+  iden3_T3  0x5fbdb2315678afecb367f032d93f642f64180aa3  runtime= 9,743 B  deployGas=2,157,126
+  fork_T3   0xe7f1725e7734ce288f8367e1bb143e90bb3f0512  runtime=14,660 B  deployGas=3,223,329
+  new_T3    0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0  runtime=13,731 B  deployGas=3,022,307
+  iden3_T4  0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9  runtime=12,463 B  deployGas=2,745,274
+  fork_T4   0xdc64a140aa3e981100a9beca4e685f962f0cf6c9  runtime=20,748 B  deployGas=4,540,052
+  new_T4    0x5fc8d32690cc91d4c39d9d3abcbd16989f875707  runtime=19,750 B  deployGas=4,324,035
+  yul_T3_bls 0x0165878a594ca255338adfa4d48449f69242eb8f  runtime=14,785 B  deployGas=3,250,368
+  new_T3_bls 0xa513e6e4b8f2a923d98304ec87f64353c4d5c853  runtime=13,952 B  deployGas=3,070,091
+  yul_T4_bls 0x2279b7a0a67db372996a5fab50d91eaa73d2ebe6  runtime=20,971 B  deployGas=4,588,210
+  new_T4_bls 0x8a791620dd6260079bf849dc5567adc3f2fdc318  runtime=20,045 B  deployGas=4,387,801
+  platus_p2 0x610178da211fef7d417bc0e6fed39f05609ad788  runtime=15,095 B  deployGas=3,315,998
+
+== functional equivalence ==
+  T3: 305 vectors across ['iden3_T3', 'fork_T3', 'new_T3']: mismatches = 0
+  T4: 305 vectors across ['iden3_T4', 'fork_T4', 'new_T4']: mismatches = 0
+  T3: 305 vectors across ['yul_T3_bls', 'new_T3_bls']: mismatches = 0
+  T4: 305 vectors across ['yul_T4_bls', 'new_T4_bls']: mismatches = 0
+
+== single hash via STATICCALL (cold = first touch of the library account, warm = second call) ==
+  iden3_T3  cold= 31,883  warm= 29,374
+  fork_T3   cold= 15,285  warm= 12,776
+  new_T3    cold= 13,030  warm= 10,521
+  yul_T3_bls cold= 16,146  warm= 13,637
+  new_T3_bls cold= 14,249  warm= 11,740
+  platus_p2_2w cold= 19,649  warm= 17,143   (Poseidon2 t=4 sponge, 2 packed words)
+  iden3_T4  cold= 48,012  warm= 45,500
+  fork_T4   cold= 19,324  warm= 16,812
+  new_T4    cold= 16,938  warm= 14,426
+  yul_T4_bls cold= 20,997  warm= 18,485
+  new_T4_bls cold= 18,895  warm= 16,383
+  platus_p2_3w cold= 19,655  warm= 17,146   (Poseidon2 t=4 sponge, 3 packed words)
+
+== shielded pool Commitments.insertLeaves (TREE_DEPTH=16, PoseidonT3) ==
+  iden3_T3  1leaf= 651,191  2leaf= 649,276  4leaf= 677,458  8leaf= 765,834
+  fork_T3   1leaf= 385,623  2leaf= 383,708  4leaf= 395,292  8leaf= 433,874
+  new_T3    1leaf= 349,543  2leaf= 347,628  4leaf= 356,957  8leaf= 388,774
+  yul_T3_bls 1leaf= 399,399  2leaf= 397,484  4leaf= 409,929  8leaf= 451,094
+  new_T3_bls 1leaf= 369,047  2leaf= 367,132  4leaf= 377,680  8leaf= 413,154
+  platus_p2 1leaf= 455,111  2leaf= 453,196  4leaf= 469,123  8leaf= 520,734   (Poseidon2, own roots)
+  roots identical within each field
+  insertLeaves(1): iden3=651,191  fork=385,623  new=349,543  saved vs iden3=301,648 (46.3%)  vs fork=36,080 (9.4%)
+  insertLeaves(2): iden3=649,276  fork=383,708  new=347,628  saved vs iden3=301,648 (46.5%)  vs fork=36,080 (9.4%)
+  insertLeaves(4): iden3=677,458  fork=395,292  new=356,957  saved vs iden3=320,501 (47.3%)  vs fork=38,335 (9.7%)
+  insertLeaves(8): iden3=765,834  fork=433,874  new=388,774  saved vs iden3=377,060 (49.2%)  vs fork=45,100 (10.4%)
+
+written bench_results.json
+
+== check against expected.json ==
+  single.iden3_T3.cold       expected    31,883  measured    31,883  ok
+  single.iden3_T3.warm       expected    29,374  measured    29,374  ok
+  single.fork_T3.cold        expected    15,285  measured    15,285  ok
+  single.fork_T3.warm        expected    12,776  measured    12,776  ok
+  single.new_T3.cold         expected    13,030  measured    13,030  ok
+  single.new_T3.warm         expected    10,521  measured    10,521  ok
+  single.yul_T3_bls.cold     expected    16,146  measured    16,146  ok
+  single.yul_T3_bls.warm     expected    13,637  measured    13,637  ok
+  single.new_T3_bls.cold     expected    14,249  measured    14,249  ok
+  single.new_T3_bls.warm     expected    11,740  measured    11,740  ok
+  single.platus_p2_2w.cold   expected    19,649  measured    19,649  ok
+  single.platus_p2_2w.warm   expected    17,143  measured    17,143  ok
+  single.iden3_T4.cold       expected    48,012  measured    48,012  ok
+  single.iden3_T4.warm       expected    45,500  measured    45,500  ok
+  single.fork_T4.cold        expected    19,324  measured    19,324  ok
+  single.fork_T4.warm        expected    16,812  measured    16,812  ok
+  single.new_T4.cold         expected    16,938  measured    16,938  ok
+  single.new_T4.warm         expected    14,426  measured    14,426  ok
+  single.yul_T4_bls.cold     expected    20,997  measured    20,997  ok
+  single.yul_T4_bls.warm     expected    18,485  measured    18,485  ok
+  single.new_T4_bls.cold     expected    18,895  measured    18,895  ok
+  single.new_T4_bls.warm     expected    16,383  measured    16,383  ok
+  single.platus_p2_3w.cold   expected    19,655  measured    19,655  ok
+  single.platus_p2_3w.warm   expected    17,146  measured    17,146  ok
+  insertLeaves.iden3_T3.1    expected   651,191  measured   651,191  ok
+  insertLeaves.iden3_T3.2    expected   649,276  measured   649,276  ok
+  insertLeaves.iden3_T3.4    expected   677,458  measured   677,458  ok
+  insertLeaves.iden3_T3.8    expected   765,834  measured   765,834  ok
+  insertLeaves.fork_T3.1     expected   385,623  measured   385,623  ok
+  insertLeaves.fork_T3.2     expected   383,708  measured   383,708  ok
+  insertLeaves.fork_T3.4     expected   395,292  measured   395,292  ok
+  insertLeaves.fork_T3.8     expected   433,874  measured   433,874  ok
+  insertLeaves.new_T3.1      expected   349,543  measured   349,543  ok
+  insertLeaves.new_T3.2      expected   347,628  measured   347,628  ok
+  insertLeaves.new_T3.4      expected   356,957  measured   356,957  ok
+  insertLeaves.new_T3.8      expected   388,774  measured   388,774  ok
+  insertLeaves.yul_T3_bls.1  expected   399,399  measured   399,399  ok
+  insertLeaves.yul_T3_bls.2  expected   397,484  measured   397,484  ok
+  insertLeaves.yul_T3_bls.4  expected   409,929  measured   409,929  ok
+  insertLeaves.yul_T3_bls.8  expected   451,094  measured   451,094  ok
+  insertLeaves.new_T3_bls.1  expected   369,047  measured   369,047  ok
+  insertLeaves.new_T3_bls.2  expected   367,132  measured   367,132  ok
+  insertLeaves.new_T3_bls.4  expected   377,680  measured   377,680  ok
+  insertLeaves.new_T3_bls.8  expected   413,154  measured   413,154  ok
+  insertLeaves.platus_p2.1   expected   455,111  measured   455,111  ok
+  insertLeaves.platus_p2.2   expected   453,196  measured   453,196  ok
+  insertLeaves.platus_p2.4   expected   469,123  measured   469,123  ok
+  insertLeaves.platus_p2.8   expected   520,734  measured   520,734  ok
+  runtime_bytes.iden3_T3     expected     9,743  measured     9,743  ok
+  runtime_bytes.fork_T3      expected    14,660  measured    14,660  ok
+  runtime_bytes.new_T3       expected    13,731  measured    13,731  ok
+  runtime_bytes.iden3_T4     expected    12,463  measured    12,463  ok
+  runtime_bytes.fork_T4      expected    20,748  measured    20,748  ok
+  runtime_bytes.new_T4       expected    19,750  measured    19,750  ok
+  runtime_bytes.yul_T3_bls   expected    14,785  measured    14,785  ok
+  runtime_bytes.new_T3_bls   expected    13,952  measured    13,952  ok
+  runtime_bytes.yul_T4_bls   expected    20,971  measured    20,971  ok
+  runtime_bytes.new_T4_bls   expected    20,045  measured    20,045  ok
+  runtime_bytes.platus_p2    expected    15,095  measured    15,095  ok
+  59/59 measurements confirmed
