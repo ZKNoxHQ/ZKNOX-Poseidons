@@ -19,22 +19,22 @@ Naming, as in circomlib: **PoseidonT3** is the width-3 permutation hashing **2 i
 | iden3 / circomlibjs `createCode` bytecode (what shielded pools link today) | 29,374 | 45,500 |
 | [partylikeits1983/poseidon-solidity](https://github.com/partylikeits1983/poseidon-solidity) (Yul, solc 0.7.6) | 12,776 | 16,812 |
 | [platus-xyz/poseidon2-solidity](https://github.com/platus-xyz/poseidon2-solidity) (Poseidon2, width-4 sponge, packed calldata) | 17,143 | 17,146 |
-| **ZKNOX-Poseidons, BN254** | **10,521** | **14,426** |
+| **ZKNOX-Poseidons, BN254** | **10,187** | **13,864** |
 | ZKNOX-Poseidons, BLS12-381 | 11,740 | 16,383 |
 
 Cold calls: +2,509 on every entry (first touch of the account). Inside the callee,
-data-independent: BN254 10,149 (T3) / 14,051 (T4), BLS12-381 11,368 / 16,008.
+data-independent: BN254 9,815 (T3) / 13,489 (T4), BLS12-381 11,368 / 16,008.
 
 | shielded pool `Commitments.insertLeaves(1)`, depth 16 = 16 two-input hashes + tree bookkeeping | gas |
 |---|---|
 | iden3 / circomlibjs | 651,191 |
 | poseidon-solidity | 385,623 |
 | platus Poseidon2 (its own roots) | 455,111 |
-| **ZKNOX-Poseidons, BN254** | **349,543** |
+| **ZKNOX-Poseidons, BN254** | **344,199** |
 | ZKNOX-Poseidons, BLS12-381 | 369,047 |
 
 Runtime sizes (T3 / T4): poseidon-solidity 14,660 / 20,748 B, platus 15,095 B (one contract),
-ZKNOX-Poseidons 13,731 / 19,750 B (BN254), 13,952 / 20,045 B (BLS12-381).
+ZKNOX-Poseidons 13,692 / 19,739 B (BN254), 13,952 / 20,045 B (BLS12-381).
 
 `make bench` re-measures everything on anvil (the two other repos are compiled at their own
 settings: poseidon-solidity solc 0.7.6 legacy optimizer, platus solc 0.8.27 runs 20000 cancun,
@@ -52,14 +52,14 @@ libraries are touched cold once (+2,509 each). With the warm numbers above:
 |---|---|---|---|
 | iden3 / circomlibjs (the shielded pools' current bytecode) | 520,502 | | |
 | poseidon-solidity | 226,246 | −294,256 | |
-| **ZKNOX-Poseidons, BN254** | **187,780** | **−332,722 (−64 %)** | **−38,466 (−17 %)** |
+| **ZKNOX-Poseidons, BN254** | **181,874** | **−338,628 (−65 %)** | **−44,372 (−20 %)** |
 | ZKNOX-Poseidons, BLS12-381 | 209,241 | −311,261 | |
 
 The rest of the shield (token transfer, tree bookkeeping, event) is unchanged; the measured
-`insertLeaves(1)` figures (651,191 / 385,623 / 349,543) confirm the same deltas end to end,
+`insertLeaves(1)` figures (651,191 / 385,623 / 344,199) confirm the same deltas end to end,
 the ~181 k left in that call being cold SSTOREs of the fresh tree. A private transfer inserts
 two commitments (16 T3 again) and adds the SNARK verification, so its hash part moves by the
-same 16 × 18,853 ≈ 302 k vs iden3.
+same 16 × 19,187 ≈ 307 k vs iden3.
 
 ### I/O compatibility with poseidon-solidity (BN254)
 
@@ -71,7 +71,7 @@ and checks equality of the digests on 10,000 fuzzed inputs per width, on the edg
 (0, p−1, p, p+1, 2²⁵⁶−1, 2²⁵⁵), on circomlib's vector and on the fork's own lazy-reduction
 regression vector, plus the identity between the `hash(uint256[n])` and `poseidon(bytes32[n])`
 builds. `test/Poseidon.t.sol` does the same through the shielded-pool ABI. The fork-ABI build costs
-the same gas (10,149 / 14,051 in the callee); only the selector differs.
+the same gas (9,815 / 13,489 in the callee); only the selector differs.
 
 ## Quick start
 
@@ -80,7 +80,7 @@ make deps      # python: pycryptodome
 make test      # Foundry: 31 tests, 10k-run fuzz equality with poseidon-solidity and the reference Yul, vectors, gas, EIP-170
 make verify    # Python: Grain/MDS vs circomlib and hadeshash, runtimes vs the reference on 1,670 inputs
 make bench     # anvil benchmark, every number checked against bench/expected.json (exit 1 on deviation)
-make gen       # regenerate yul/ and artifacts/ from the reference constants (~15 min, one core)
+make gen       # regenerate yul/ and artifacts/ from the reference constants (~45 min, one core)
 ```
 
 Requirements: [Foundry](https://getfoundry.sh) (forge, anvil; solc 0.7.6 and 0.8.30 are fetched
@@ -127,7 +127,8 @@ yul/               generated optimised Yul: block-scoped (solc-compilable refere
 params/            reference instances: Grain constants, MDS x/y, test vectors
 gen/               generator (Python)
   poseidon_ref.py    Grain LFSR, Cauchy MDS, reference permutation and hash
-  poseidon_opt.py    constant folding, sparse factorisation, diagonal normalisation, Yul emission
+  poseidon_opt.py    constant folding, sparse factorisation, diagonal normalisation, Yul emission (BLS12-381)
+  poseidon_delay.py  delay-line partial rounds, S-boxes interleaved with the linear layers (BN254)
   yuldag.py, segment.py, canon.py, sched.py, build.py   Yul -> DAG -> scheduled straight-line bytecode
   verify*.py, analyze.py
 test/              Foundry tests; test/reference/ holds the solc-compiled references
@@ -148,16 +149,22 @@ bench/             anvil harness: single hash cold/warm, shielded pool Commitmen
    emits Yul with lazy reduction driven by the field: `add` while the sum stays under
    floor(2²⁵⁶/p) field-sized summands (5 on BN254, 2 on BLS12-381), `addmod` otherwise.
    Every step is checked against the reference with exact and then 256-bit semantics.
+   On BN254 `poseidon_delay.py` replaces it: the partial rounds are put in controller canonical
+   (delay-line) form, z₁' = y + a·z, z_k' = z_{k−1}, X' = y + c·z + k, with the same 2(t−1)
+   multiplications per round but sums of at most t+1 terms that never accumulate, so the
+   partial rounds contain no `addmod` (T3: 3 `addmod` in the whole hash instead of 27, T4: 7
+   instead of 40), and every S-box input is sent through its S-box as soon as it is summed.
 3. `build.py` parses the flat Yul into a DAG, cuts it into small segments (never inside an
    S-box, partial rounds kept whole), schedules each segment optimally on the EVM stack
    (macro-move search, weighted A*) with a DP over stack orders at segment boundaries, and
-   emits one basic block: dispatcher, modulus at the bottom of the stack (DUPn), 510 MULMOD for
+   emits one basic block: dispatcher, modulus at the bottom of the stack (DUPn), 511 MULMOD for
    T3, constants as PUSH32, return. No loops, no memory but the return word, constant gas.
 
-Where the gas goes (T3, BN254): 510 MULMOD = 4,080 gas; solc spends 5,970 gas in 1,406 DUP +
+Where the gas goes (T3, BN254): 511 MULMOD = 4,088 gas; solc spends 5,970 gas in 1,406 DUP +
 352 SWAP + 349 POP on the same arithmetic, the scheduled code 21 DUP and 2 SWAP per partial
-round (134 gas, arithmetic floor 128). Remaining headroom about 1 % on T3, 2–3 % on T4
-(DECISIONS.md ADR-6). BLS12-381 pays only the extra `addmod` (T3: 140 vs 27).
+round (134 gas, arithmetic floor 128; T4: 177 for a floor of 168). What is left above the
+floor is those SWAPs and about 16 gas per full round (DECISIONS.md, last ADR). BLS12-381 keeps
+the integrator form and pays the extra `addmod` (T3: 140 vs 3).
 
 ## Verification
 

@@ -102,3 +102,44 @@ final digest combination is an `addmod` so the output is canonical without a `mo
 
 The solc-compilable Yul (block-scoped temporaries, in-place S-boxes, 9 live variables) is the
 reference in the Foundry tests; the scheduler consumes the flat SSA form (same DAG).
+
+## ADR-8 — BN254: delay-line partial rounds and interleaved S-boxes
+
+The partial rounds are a linear time-invariant system driven by the S-box output y:
+l' = N l + b y, X' = M00 y + m.l + const, with N = M[1:,1:], b = M[1:,0], m = M[0,1:]. Any
+realisation needs 2(t-1) multiplications per round (order t-1, 2(t-1) free parameters once the
+per-round scaling of X is used). The sparse factorisation is the integrator realisation,
+l_j' = l_j + w_j y: its lanes gain one field-sized summand per round and take an `addmod` every
+fifth round on BN254 (24 of the 27 `addmod` of T3, 36 of the 40 of T4).
+
+`gen/poseidon_delay.py` uses the controller canonical form instead, z = T^-1 l with
+T = [b, N b - a1 b, ...] and a the characteristic polynomial of N:
+z1' = y + a.z, z_k' = z_(k-1), X' = y + c.z + k, c = m T. Same multiplication count; z1 is a sum
+of t terms, X of t+1, the delays are renamings and nothing accumulates, so the partial rounds
+need no `addmod` as long as t+1 <= floor(2^256/p), i.e. t <= 4 on BN254. T^-1 is merged into the
+linear layer of the last full round before the partial rounds; T is applied once at the exit
+(T3: 1 extra multiplication in total, T4: 4, and 3 `addmod` on T4 where a row has 7 summands).
+The round constants become one constant per round through the affine recurrence
+delta' = N (delta + C[1:]). The per-round scalings put the coefficient of y to 1 in both sums;
+normalising a z coefficient instead would bring back a raw 3-summand term and overflow the bound.
+
+Second change, same file: a value that is an S-box input is sent through the S-box in the
+statement that follows its sum, and `build.py --glue-sbox` never cuts between the two, so the
+scheduler parks the modulus under the sum (S-box at its 42-gas floor in full rounds too).
+
+Measured (callee gas): T3 10,149 -> 9,815, of which 87 from the interleaving alone (integrator
+form with interleaving: 10,062) and 247 from the delay line. T4 14,051 -> 13,489; there the
+delay line only pays once whole partial rounds get a near-exact search (`--whole-expand 60000
+--whole-weight 1.05`): 177 gas per round against 189 with the default budget and 180 + 4.7 of
+amortised `addmod` for the integrator form (integrator with interleaving: 13,925).
+
+Tried and rejected: observer canonical form (140 against 134 per T3 round), reading the row on the updated
+state X' = z1' + c'.z + k (6 summands, one over the bound), two rounds per segment (271 against
+2 x 134). Not applicable to BLS12-381 Fr, where only two summands fit: those artifacts keep the
+integrator form and are unchanged.
+
+Left above the arithmetic floor: 2 SWAP per T3 partial round (134 for 128), 3 on average for T4
+(177 for 168), and about 16 gas per full round where the last row has to dig the dying S-box
+outputs from under the new ones. A one-SWAP partial round would need operands pre-placed under a
+value across round boundaries, which the segment model (only state values cross a boundary)
+cannot express.

@@ -3,7 +3,7 @@
 #   make test      Foundry tests (BN254 + BLS12-381, 10k-run fuzz vs the reference Yul)
 #   make verify    Python checks: reference implementation vs circomlib vectors, bytecode vs reference
 #   make bench     anvil benchmark, checked against bench/expected.json (make bench-update to refresh)
-#   make gen       regenerate yul/ and artifacts/ for the four instances (~15 min, single core)
+#   make gen       regenerate yul/ and artifacts/ for the four instances (~45 min, single core)
 #   make all       test + verify
 #
 # Requirements: Foundry (forge, anvil), Python 3.10+ with pycryptodome (`make deps`).
@@ -21,6 +21,11 @@ YUL_DIR      = yul
 ART          = artifacts
 BUILD_T3     = --keep 3 --slack 3 --block-max 14 --cut-ops 8 --max-live 7
 BUILD_T4     = --weight 1.2 --max-expand 15000 --keep 3 --slack 3 --block-max 20 --cut-ops 8 --max-live 7
+# BN254 (delay-line Yul): S-boxes glued to the value they consume, whole partial rounds searched deeper
+BUILD_T3_BN254 = --glue-sbox --keep 3 --slack 3 --block-max 12 --cut-ops 8 --max-live 7
+BUILD_T4_BN254 = --glue-sbox --weight 1.2 --max-expand 15000 --whole-expand 60000 --whole-weight 1.05 \
+                 --keep 6 --slack 6 --block-max 16 --cut-ops 8 --max-live 7
+FORK_ABI     = $(ART)/poseidon-solidity-abi
 
 .PHONY: help deps build test test-bn254 test-bls verify verify-ref verify-bytecode bench bench-update _bench gen gen-yul gen-bytecode clean all
 SHELL := /bin/bash
@@ -72,16 +77,21 @@ _bench:
 gen: gen-yul gen-bytecode
 
 gen-yul:
-	cd gen && $(PYTHON) poseidon_opt.py bn254 3 8 57 PoseidonT3BN254 ../$(YUL_DIR)/PoseidonT3_bn254.sol
-	cd gen && $(PYTHON) poseidon_opt.py bn254 4 8 56 PoseidonT4BN254 ../$(YUL_DIR)/PoseidonT4_bn254.sol
+	cd gen && $(PYTHON) poseidon_delay.py bn254 3 8 57 PoseidonT3BN254 ../$(YUL_DIR)/PoseidonT3_bn254.sol delay
+	cd gen && $(PYTHON) poseidon_delay.py bn254 4 8 56 PoseidonT4BN254 ../$(YUL_DIR)/PoseidonT4_bn254.sol delay
 	cd gen && $(PYTHON) poseidon_opt.py bls   3 8 57 PoseidonT3BLS   ../$(YUL_DIR)/PoseidonT3_bls12381.sol
 	cd gen && $(PYTHON) poseidon_opt.py bls   4 8 56 PoseidonT4BLS   ../$(YUL_DIR)/PoseidonT4_bls12381.sol
 	sed 's/library PoseidonT3BLS {/library RefPoseidonT3BLS {/' $(YUL_DIR)/PoseidonT3_bls12381.sol > test/reference/RefPoseidonT3BLS.sol
 	sed 's/library PoseidonT4BLS {/library RefPoseidonT4BLS {/' $(YUL_DIR)/PoseidonT4_bls12381.sol > test/reference/RefPoseidonT4BLS.sol
 
 gen-bytecode:
-	$(PYTHON) gen/build.py $(YUL_DIR)/PoseidonT3_bn254.flat.sol     --width 3 --name PoseidonT3         --out $(ART)           --memo .memo_bn254_t3.pkl $(BUILD_T3)
-	$(PYTHON) gen/build.py $(YUL_DIR)/PoseidonT4_bn254.flat.sol     --width 4 --name PoseidonT4         --out $(ART)           --memo .memo_bn254_t4.pkl $(BUILD_T4)
+	$(PYTHON) gen/build.py $(YUL_DIR)/PoseidonT3_bn254.flat.sol     --width 3 --name PoseidonT3         --out $(ART)           --memo .memo_bn254_t3.pkl $(BUILD_T3_BN254)
+	$(PYTHON) gen/build.py $(YUL_DIR)/PoseidonT4_bn254.flat.sol     --width 4 --name PoseidonT4         --out $(ART)           --memo .memo_bn254_t4.pkl $(BUILD_T4_BN254)
+	$(PYTHON) gen/build.py $(YUL_DIR)/PoseidonT3_bn254.flat.sol     --width 3 --name PoseidonT3 --sig 'hash(uint256[2])' --out $(FORK_ABI) --memo .memo_bn254_t3.pkl $(BUILD_T3_BN254)
+	$(PYTHON) gen/build.py $(YUL_DIR)/PoseidonT4_bn254.flat.sol     --width 4 --name PoseidonT4 --sig 'hash(uint256[3])' --out $(FORK_ABI) --memo .memo_bn254_t4.pkl $(BUILD_T4_BN254)
+	sed 's/contract PoseidonT3 {/contract PoseidonT3ForkAbi {/; s/interface IPoseidonT3 {/interface IPoseidonT3ForkAbi {/' $(FORK_ABI)/src/PoseidonT3.sol > src/PoseidonT3ForkAbi.sol
+	sed 's/contract PoseidonT4 {/contract PoseidonT4ForkAbi {/; s/interface IPoseidonT4 {/interface IPoseidonT4ForkAbi {/' $(FORK_ABI)/src/PoseidonT4.sol > src/PoseidonT4ForkAbi.sol
+	rm -r $(FORK_ABI)/src
 	$(PYTHON) gen/build.py $(YUL_DIR)/PoseidonT3_bls12381.flat.sol  --width 3 --name PoseidonT3BLS12381 --out $(ART)/bls12-381 --memo .memo_bls_t3.pkl   $(BUILD_T3)
 	$(PYTHON) gen/build.py $(YUL_DIR)/PoseidonT4_bls12381.flat.sol  --width 4 --name PoseidonT4BLS12381 --out $(ART)/bls12-381 --memo .memo_bls_t4.pkl   $(BUILD_T4)
 	cp $(ART)/src/PoseidonT3.sol $(ART)/src/PoseidonT4.sol $(ART)/bls12-381/src/PoseidonT3BLS12381.sol $(ART)/bls12-381/src/PoseidonT4BLS12381.sol src/

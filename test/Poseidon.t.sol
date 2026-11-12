@@ -117,7 +117,7 @@ contract PoseidonT3Test is Deployer {
         require(a == b, "outputs differ");
         require(gNew < gRef, "not cheaper than the ref");
         log("T3 warm STATICCALL gas (new, poseidon-solidity)", gNew, gRef);
-        require(gNew <= 10149 + 800, "T3 gas regression (callee 10150 + STATICCALL overhead)");
+        require(gNew <= 9815 + 800, "T3 gas regression (callee 9815 + STATICCALL overhead)");
     }
 
     function testRuntimeBelowEip170Limit() public view {
@@ -179,7 +179,7 @@ contract PoseidonT4Test is Deployer {
         require(a == b, "outputs differ");
         require(gNew < gRef, "not cheaper than the ref");
         log("T4 warm STATICCALL gas (new, poseidon-solidity)", gNew, gRef);
-        require(gNew <= 14051 + 800, "T4 gas regression (callee 14049 + STATICCALL overhead)");
+        require(gNew <= 13489 + 800, "T4 gas regression (callee 13489 + STATICCALL overhead)");
     }
 
     function testRuntimeBelowEip170Limit() public view {

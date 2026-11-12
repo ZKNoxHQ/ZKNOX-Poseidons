@@ -7,10 +7,10 @@
   "selectors": [
     "0x5a53025d"
   ],
-  "runtime_bytes": 19750,
-  "creation_bytes": 19762,
-  "callee_gas": 14051,
-  "body_gas": 13994,
+  "runtime_bytes": 19739,
+  "creation_bytes": 19751,
+  "callee_gas": 13489,
+  "body_gas": 13432,
   "sample_input": [
     1,
     2,

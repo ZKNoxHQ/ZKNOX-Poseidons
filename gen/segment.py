@@ -27,7 +27,8 @@ def compute_order(dag, stmts):
     return comp
 
 
-def segments(dag, stmts, width, min_ops=1, max_ops=40, max_live=None, cut_ops=4, no_cut_before_sbox=False):
+def segments(dag, stmts, width, min_ops=1, max_ops=40, max_live=None, cut_ops=4, no_cut_before_sbox=False,
+             glue_fed_sbox=False):
     """Split the statement list into segments at boundaries whose live set has
     at most `width` values. Returns list of (start_stmt, end_stmt, live_in, live_out)."""
     comp = compute_order(dag, stmts)
@@ -78,6 +79,18 @@ def segments(dag, stmts, width, min_ops=1, max_ops=40, max_live=None, cut_ops=4,
         """statement i starts an S-box that is not part of a full-round S-box layer"""
         return starts_sbox(i) and not starts_sbox(i + 2) and not (i >= 2 and starts_sbox(i - 2))
 
+    def glued(i):
+        """no cut right before statement i: it starts a partial-round S-box, or (glue_fed_sbox) an
+        S-box whose input is the value of statement i-1, so the modulus can be parked under it"""
+        if not no_cut_before_sbox or i >= n_st:
+            return False
+        if lone_sbox(i):
+            return True
+        if glue_fed_sbox and i >= 1 and sbox_first_half(i):
+            x = [v for v in dag.nodes[stmts[i][2]].args if not (dag.nodes[v].kind == "const" and dag.nodes[v].val == dag.modulus)][0]
+            return stmts[i - 1][0] in ("let", "assign") and stmts[i - 1][2] == x
+        return False
+
     # pass 1: natural cuts where the live set fits in the state width, except right
     # before a partial-round S-box (so F can be parked under its input by the linear layer)
     natural = [-1]
@@ -85,7 +98,7 @@ def segments(dag, stmts, width, min_ops=1, max_ops=40, max_live=None, cut_ops=4,
     for i in range(n_st):
         ops_since += ops_at[i]
         if len(live_after[i]) <= width and (ops_since >= min_ops or i == n_st - 1) and \
-                (i == n_st - 1 or not (no_cut_before_sbox and lone_sbox(i + 1))) and not sbox_first_half(i):
+                (i == n_st - 1 or not glued(i + 1)) and not sbox_first_half(i):
             natural.append(i)
             ops_since = 0
     # pass 2: blocks with more than `max_ops` op nodes are cut internally, never inside
@@ -98,7 +111,7 @@ def segments(dag, stmts, width, min_ops=1, max_ops=40, max_live=None, cut_ops=4,
             for i in range(a + 1, b):
                 ops_since += ops_at[i]
                 if len(live_after[i]) <= max_live and ops_since + ops_at[i + 1] > cut_ops and \
-                        not sbox_first_half(i) and not (no_cut_before_sbox and lone_sbox(i + 1)):
+                        not sbox_first_half(i) and not glued(i + 1):
                     cuts.append(i)
                     ops_since = 0
         cuts.append(b)

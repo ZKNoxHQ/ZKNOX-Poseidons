@@ -25,10 +25,11 @@ OPCODE = {"add": 0x01, "mulmod": 0x09, "addmod": 0x08}
 
 # ---------------------------------------------------------------------------
 def plan(dag, stmts, width, slack=6, keep=6, max_live=6, cut_ops=8, block_max=12,
-         max_expand=200000, weight=1.0, memo_path=None, verbose=True, min_ops=1):
+         max_expand=200000, weight=1.0, memo_path=None, verbose=True, min_ops=1, glue_sbox=False,
+         whole_expand=None, whole_weight=None):
     """DP over stack orders at segment boundaries. Returns (chain, body_gas)."""
     segs, comp = segments(dag, stmts, width, min_ops, block_max, max_live=max_live, cut_ops=cut_ops,
-                          no_cut_before_sbox=True)
+                          no_cut_before_sbox=True, glue_fed_sbox=glue_sbox)
     if verbose:
         print(f"{len(segs)} segments", file=sys.stderr)
     memo = pickle.load(open(memo_path, "rb")) if memo_path and os.path.exists(memo_path) else {}
@@ -45,8 +46,12 @@ def plan(dag, stmts, width, slack=6, keep=6, max_live=6, cut_ops=8, block_max=12
             cn = Canon(dag, comp, seg, in_order, tuple(live_out))
             key = cn.seg.key
             if key not in memo:
+                # a segment that maps a full state to a full state is a whole (partial) round: it is
+                # repeated R_P times, so it gets its own, usually much larger, search budget
+                whole = len(live_in) <= width and len(live_out) <= width
                 found, _ = Solver(cn.seg).solve(slack=slack, want_all_orders=True,
-                                                max_expand=max_expand, weight=weight)
+                                                max_expand=(whole_expand or max_expand) if whole else max_expand,
+                                                weight=(whole_weight or weight) if whole else weight)
                 memo[key] = found
                 if memo_path:
                     pickle.dump(memo, open(memo_path + ".tmp", "wb"))
@@ -307,6 +312,11 @@ def main():
     ap.add_argument("--cut-ops", type=int, default=8)
     ap.add_argument("--block-max", type=int, default=12)
     ap.add_argument("--min-ops", type=int, default=1, help="minimum op nodes before a natural cut")
+    ap.add_argument("--whole-expand", type=int, default=None,
+                    help="search budget for segments mapping a full state to a full state (partial rounds)")
+    ap.add_argument("--whole-weight", type=float, default=None, help="A* weight for those segments")
+    ap.add_argument("--glue-sbox", action="store_true",
+                    help="never cut between a value and the S-box that consumes it at once (delay-line Yul)")
     ap.add_argument("--max-expand", type=int, default=200000)
     ap.add_argument("--weight", type=float, default=1.0)
     ap.add_argument("--memo", default=None, help="pickle file to checkpoint segment solutions")
@@ -320,7 +330,8 @@ def main():
     dag, stmts = parse_library(args.source)
     chain, body = plan(dag, stmts, width, slack=args.slack, keep=args.keep, max_live=args.max_live,
                        cut_ops=args.cut_ops, block_max=args.block_max, max_expand=args.max_expand,
-                       weight=args.weight, memo_path=args.memo, min_ops=args.min_ops)
+                       weight=args.weight, memo_path=args.memo, min_ops=args.min_ops,
+                       glue_sbox=args.glue_sbox, whole_expand=args.whole_expand, whole_weight=args.whole_weight)
     runtime, body_gas = emit(chain, dag, sels, width)
     assert body_gas == body
     creation = creation_code(runtime)
