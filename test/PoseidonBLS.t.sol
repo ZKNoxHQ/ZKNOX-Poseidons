@@ -82,7 +82,7 @@ contract PoseidonT3BLSTest is DeployerBLS {
         (uint256 b, uint256 gRef) = rawHash(address(ref), dRef);
         log("BLS T3 warm STATICCALL gas (new, solc Yul)", gNew, gRef);
         require(a == b && gNew < gRef, "gas");
-        require(gNew <= 11368 + 800, "T3 BLS gas regression");
+        require(gNew <= 10289 + 800, "T3 BLS gas regression");
     }
 
     function testRuntimeBelowEip170Limit() public view { require(codeSize(address(poseidon)) <= 24576); }
@@ -123,7 +123,7 @@ contract PoseidonT4BLSTest is DeployerBLS {
         (uint256 b, uint256 gRef) = rawHash(address(ref), dRef);
         log("BLS T4 warm STATICCALL gas (new, solc Yul)", gNew, gRef);
         require(a == b && gNew < gRef, "gas");
-        require(gNew <= 16008 + 800, "T4 BLS gas regression");
+        require(gNew <= 14017 + 800, "T4 BLS gas regression");
     }
 
     function testRuntimeBelowEip170Limit() public view { require(codeSize(address(poseidon)) <= 24576); }

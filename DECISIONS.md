@@ -143,3 +143,49 @@ Left above the arithmetic floor: 2 SWAP per T3 partial round (134 for 128), 3 on
 outputs from under the new ones. A one-SWAP partial round would need operands pre-placed under a
 value across round boundaries, which the segment model (only state values cross a boundary)
 cannot express.
+
+## ADR-9 — BLS12-381: Horner delay line, small constants, bound-driven sums
+
+On BLS12-381 Fr, 2p < 2^256 < 3p: a 256-bit `add` holds two field-sized summands, where BN254
+holds five. In the integrator form every partial round paid one `addmod` for the read row and
+one per lane every other round (T3: 114 of its 140 `addmod`); the plain delay line of the
+BN254 ADR would still pay two per round, its rows having t and t+1 terms.
+
+`gen/poseidon_horner.py` keeps the delay line (z1' = y + a.z, z_k' = z_(k-1), X' = M00 y + c.z + k)
+and removes every three-term sum:
+
+* Horner brackets: a.z = a_n (z_n + (a_(n-1)/a_n)(z_(n-1) + ... (a_1/a_2) z_1)). A bracket is
+  add(delayed value, product) and is consumed by the next `mulmod`, which reduces it for free.
+  Same 2(t-1) multiplications per round.
+* The delay line stores products: the innermost product of the z-row, U = beta z_1, is
+  proportional to z_1 and already reduced, so it is what gets delayed. z_1 itself, y + P + E
+  (about 2p), is only ever an operand of `mulmod`.
+* Small constants: the state is stored shifted, z^ = z + d. The shift of the new z_1 is one free
+  parameter per round; it moves the constant between the z-row (E) and the next X-row (K). E is
+  chosen so that both are below 2^256 - 2p (20.8 % of the field each), which makes y + P + const
+  fit in 256 bits. E is scanned from 1 for the value followed by the longest run of rounds that
+  can take E = 0: 49 of the 57 z-rows of T3 and 48 of the 56 of T4 have no constant at all.
+  The first K is cancelled by a shift in the entry row; the last E is chosen so that the exit
+  rows get small constants too.
+* Rows outside the partial rounds use the same idea where the scale is free: one source raw, the
+  others in a Horner chain, the raw source picked so that the stored constant is small when one
+  of the t choices allows it (no `addmod`, otherwise one). The digest row, whose scale is fixed,
+  is a single Horner chain (reduced by its last `mulmod`).
+
+Sums are driven by exact bounds (p-1 for a product or an addmod, the value for a constant):
+an `add` is emitted only if the bounds of its operands sum below 2^256, otherwise groups are
+merged by `addmod`, whose operands may be any 256-bit words. `gen/verify_bounds.py` redoes this
+proof on the emitted Yul alone (interval analysis on the parsed code), for both fields, and
+runs in `make verify`; random tests cannot establish the absence of overflow.
+
+Measured (callee gas): T3 11,368 -> 10,289, T4 16,008 -> 14,017. Steps on T3: Horner delay line
+with rounds cut in two 10,878; rounds kept whole 10,575; runs of E = 0 10,428; Horner rows
+10,289. A T3 partial round costs 140 gas (156 before), a T4 round 184 (203); the exact search
+of a whole T4 round (15 operations) converges in under 20,000 expansions, the Horner chain
+leaving the scheduler few choices. Remaining `addmod`: the t-1 input reductions, the reduced
+entry rows of the delay line, and the full-round rows where no choice of raw source gives a
+small constant (T3: 12 in total, T4: 16).
+
+Not applied to BN254, where plain sums already fit and Horner brackets would only add `add`s.
+`poseidon_opt.py` is kept for its sparse derivation (used by the integrator option of
+`poseidon_delay.py`) and its Yul evaluator.

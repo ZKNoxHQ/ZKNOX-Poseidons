@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.0 — 2026-11-12
+
+* BLS12-381 Yul re-derived (`gen/poseidon_horner.py`): delay-line partial rounds evaluated in
+  Horner brackets with small stored constants, no `addmod` left in the partial rounds
+  (T3: 140 -> 12 `addmod`, T4: 255 -> 16); full-round, exit and digest rows as Horner chains;
+  S-boxes interleaved with the linear layers.
+* PoseidonT3BLS12381: 10,289 gas in the callee (was 11,368), 10,661 warm STATICCALL (was 11,740),
+  -9.2 %; 13,856-byte runtime. PoseidonT4BLS12381: 14,017 in the callee (was 16,008), 14,392 warm
+  (was 16,383), -12.2 %; 19,918-byte runtime. Depth-16 `insertLeaves(1)`: 351,783 (was 369,047).
+  BLS12-381 is now 4.7 % (T3) and 3.8 % (T4) above BN254.
+* `gen/verify_bounds.py` (in `make verify`): interval analysis of every generated Yul file,
+  proves that no `add` can overflow 256 bits independently of the emitters.
+* Same instances, I/O and ABI; 31 Foundry tests (10k-run fuzz against the solc-compiled Yul),
+  407 reference vectors per runtime, anvil bench 59/59. BN254 artifacts unchanged.
+
 ## 0.5.0 — 2026-11-12
 
 * BN254 Yul re-derived (`gen/poseidon_delay.py`): partial rounds in delay-line (controller

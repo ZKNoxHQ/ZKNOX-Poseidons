@@ -26,6 +26,10 @@ BUILD_T3_BN254 = --glue-sbox --keep 3 --slack 3 --block-max 12 --cut-ops 8 --max
 BUILD_T4_BN254 = --glue-sbox --weight 1.2 --max-expand 15000 --whole-expand 60000 --whole-weight 1.05 \
                  --keep 6 --slack 6 --block-max 16 --cut-ops 8 --max-live 7
 FORK_ABI     = $(ART)/poseidon-solidity-abi
+# BLS12-381 (Horner delay-line Yul): partial rounds kept whole and searched exactly
+BUILD_T3_BLS = --glue-sbox --keep 3 --slack 3 --block-max 14 --cut-ops 8 --max-live 7
+BUILD_T4_BLS = --glue-sbox --weight 1.2 --max-expand 15000 --whole-expand 200000 --whole-weight 1.0 \
+               --keep 6 --slack 6 --block-max 18 --cut-ops 8 --max-live 7
 
 .PHONY: help deps build test test-bn254 test-bls verify verify-ref verify-bytecode bench bench-update _bench gen gen-yul gen-bytecode clean all
 SHELL := /bin/bash
@@ -58,6 +62,7 @@ verify-ref:
 verify-bytecode:
 	cd gen && $(PYTHON) verify.py ../$(ART) ../$(VECTORS)
 	cd gen && $(PYTHON) verify_bls.py ../$(ART)/bls12-381
+	cd gen && $(PYTHON) verify_bounds.py ../$(YUL_DIR)/*.sol
 
 # `make bench` measures and checks every number against bench/expected.json (exit 1 on deviation);
 # `make bench-update` rewrites the expected values after an intentional change.
@@ -79,8 +84,8 @@ gen: gen-yul gen-bytecode
 gen-yul:
 	cd gen && $(PYTHON) poseidon_delay.py bn254 3 8 57 PoseidonT3BN254 ../$(YUL_DIR)/PoseidonT3_bn254.sol delay
 	cd gen && $(PYTHON) poseidon_delay.py bn254 4 8 56 PoseidonT4BN254 ../$(YUL_DIR)/PoseidonT4_bn254.sol delay
-	cd gen && $(PYTHON) poseidon_opt.py bls   3 8 57 PoseidonT3BLS   ../$(YUL_DIR)/PoseidonT3_bls12381.sol
-	cd gen && $(PYTHON) poseidon_opt.py bls   4 8 56 PoseidonT4BLS   ../$(YUL_DIR)/PoseidonT4_bls12381.sol
+	cd gen && $(PYTHON) poseidon_horner.py bls 3 8 57 PoseidonT3BLS   ../$(YUL_DIR)/PoseidonT3_bls12381.sol
+	cd gen && $(PYTHON) poseidon_horner.py bls 4 8 56 PoseidonT4BLS   ../$(YUL_DIR)/PoseidonT4_bls12381.sol
 	sed 's/library PoseidonT3BLS {/library RefPoseidonT3BLS {/' $(YUL_DIR)/PoseidonT3_bls12381.sol > test/reference/RefPoseidonT3BLS.sol
 	sed 's/library PoseidonT4BLS {/library RefPoseidonT4BLS {/' $(YUL_DIR)/PoseidonT4_bls12381.sol > test/reference/RefPoseidonT4BLS.sol
 
@@ -92,8 +97,8 @@ gen-bytecode:
 	sed 's/contract PoseidonT3 {/contract PoseidonT3ForkAbi {/; s/interface IPoseidonT3 {/interface IPoseidonT3ForkAbi {/' $(FORK_ABI)/src/PoseidonT3.sol > src/PoseidonT3ForkAbi.sol
 	sed 's/contract PoseidonT4 {/contract PoseidonT4ForkAbi {/; s/interface IPoseidonT4 {/interface IPoseidonT4ForkAbi {/' $(FORK_ABI)/src/PoseidonT4.sol > src/PoseidonT4ForkAbi.sol
 	rm -r $(FORK_ABI)/src
-	$(PYTHON) gen/build.py $(YUL_DIR)/PoseidonT3_bls12381.flat.sol  --width 3 --name PoseidonT3BLS12381 --out $(ART)/bls12-381 --memo .memo_bls_t3.pkl   $(BUILD_T3)
-	$(PYTHON) gen/build.py $(YUL_DIR)/PoseidonT4_bls12381.flat.sol  --width 4 --name PoseidonT4BLS12381 --out $(ART)/bls12-381 --memo .memo_bls_t4.pkl   $(BUILD_T4)
+	$(PYTHON) gen/build.py $(YUL_DIR)/PoseidonT3_bls12381.flat.sol  --width 3 --name PoseidonT3BLS12381 --out $(ART)/bls12-381 --memo .memo_bls_t3.pkl   $(BUILD_T3_BLS)
+	$(PYTHON) gen/build.py $(YUL_DIR)/PoseidonT4_bls12381.flat.sol  --width 4 --name PoseidonT4BLS12381 --out $(ART)/bls12-381 --memo .memo_bls_t4.pkl   $(BUILD_T4_BLS)
 	cp $(ART)/src/PoseidonT3.sol $(ART)/src/PoseidonT4.sol $(ART)/bls12-381/src/PoseidonT3BLS12381.sol $(ART)/bls12-381/src/PoseidonT4BLS12381.sol src/
 
 clean:
